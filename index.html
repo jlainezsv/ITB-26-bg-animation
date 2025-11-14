@@ -1,200 +1,316 @@
-<!-- index.html -->
 <!doctype html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ITB Room Experience</title>
+
   <style>
-    html,body{height:100%; margin:0; background:#0f1316; color:#fff; overflow-x:hidden;}
-    #container{position:fixed; inset:0; z-index:-1; pointer-events:none;}
-    main { position: relative; z-index: 1; padding: 56px 6vw; min-height: 200vh; }
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: #0f1316;
+      overflow-x: hidden;
+    }
+
+    #container {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    main {
+      position: relative;
+      z-index: 2;
+      padding: 48px 6vw;
+      min-height: 200vh;
+      color: #fff;
+      font-family: sans-serif;
+    }
   </style>
 </head>
+
 <body>
   <div id="container"></div>
+
   <main>
-    <h1 style="color:#C6FF4D">Into The Box — Demo</h1>
-    <p style="color:#bfcac6">Scroll para mover la cámara — Three.js demo</p>
-    <div style="height:4000px"></div>
+    <h1 style="color:#C6FF4D;">Into The Box — Background Animation</h1>
+    <p style="color:#b8c4be;">Scroll para ver el efecto en acción</p>
+    <div style="height:4000px;"></div>
   </main>
 
+  <!-- =========================================================
+       THREE.JS — IMPORTS CDN (sin dependencias locales)
+       ========================================================= -->
   <script type="module">
-/* --------------------
-  IMPORTS (CDN)
-  -------------------- */
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js";
-import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/controls/OrbitControls.js";
-import { EffectComposer } from "https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/postprocessing/EffectComposer.js";
-import { RenderPass } from "https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/postprocessing/RenderPass.js";
-import { UnrealBloomPass } from "https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/postprocessing/UnrealBloomPass.js";
-import { SMAAPass } from "https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/postprocessing/SMAAPass.js";
 
-/* -----------------------------------------------------
-   CONFIG
------------------------------------------------------ */
-const CONFIG = {
-  roomSizeFactor: 1.8,
-  gridDivisions: 18,
-  bloom: { strength: 0.9, radius: 0.6, threshold: 0.12 },
-  colorFront: 0xC6FF4D,
-  colorMid: 0x47F0C8,
-  colorBack: 0x8BB236,
-  damp: 0.06,
-  scrollPower: 1.6
-};
+  import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js";
+  import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/controls/OrbitControls.js";
+  import { EffectComposer } from "https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/postprocessing/EffectComposer.js";
+  import { RenderPass } from "https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/postprocessing/RenderPass.js";
+  import { UnrealBloomPass } from "https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/postprocessing/UnrealBloomPass.js";
+  import { SMAAPass } from "https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/postprocessing/SMAAPass.js";
 
-/* -----------------------------------------------------
-   SCENE + CAMERA + RENDERER
------------------------------------------------------ */
-const container = document.getElementById('container');
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-renderer.setPixelRatio(Math.max(1, window.devicePixelRatio || 1));
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-container.appendChild(renderer.domElement);
+  /* =========================================================
+     CONFIG
+  ========================================================= */
+  const CONFIG = {
+    roomSizeFactor: 1.8,
+    gridDivisions: 18,
+    bloom: { strength: 1.0, radius: 0.7, threshold: 0.05 },
+    colorFront: 0xC6FF4D,
+    colorMid: 0x47F0C8,
+    colorBack: 0x8BB236
+  };
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0f1316);
+  /* =========================================================
+     SCENE + CAMERA + RENDERER
+  ========================================================= */
+  const container = document.getElementById("container");
 
-const camera = new THREE.PerspectiveCamera(55, window.innerWidth/window.innerHeight, 0.1, 10000);
-camera.position.set(400,120,800);
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.max(1, window.devicePixelRatio));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  container.appendChild(renderer.domElement);
 
-/* POSTPROCESSING */
-const composer = new EffectComposer(renderer);
-composer.addPass(new RenderPass(scene,camera));
-const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), CONFIG.bloom.strength, CONFIG.bloom.radius, CONFIG.bloom.threshold);
-composer.addPass(bloomPass);
-composer.addPass(new SMAAPass(window.innerWidth * renderer.getPixelRatio(), window.innerHeight * renderer.getPixelRatio()));
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0f1316);
 
-/* -----------------------------------------------------
-   ROOM CREATION (grid cube)
------------------------------------------------------ */
-let roomGroup = new THREE.Group();
-scene.add(roomGroup);
-const lineRegistry = [];
+  const camera = new THREE.PerspectiveCamera(
+    55,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    5000
+  );
+  camera.position.set(400, 120, 800);
 
-function buildRoom(){
-  while(roomGroup.children.length) roomGroup.remove(roomGroup.children[0]);
-  lineRegistry.length = 0;
+  /* POSTPROCESSING */
+  const composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
 
-  const minSide = Math.min(window.innerWidth, window.innerHeight);
-  const s = minSide * CONFIG.roomSizeFactor;
-  const div = CONFIG.gridDivisions;
-  const step = s / div;
+  const bloomPass = new UnrealBloomPass(
+    new THREE.Vector2(window.innerWidth, window.innerHeight),
+    CONFIG.bloom.strength,
+    CONFIG.bloom.radius,
+    CONFIG.bloom.threshold
+  );
+  composer.addPass(bloomPass);
 
-  function addGridPlane(origin, u, v, color){
-    const verts = [];
-    for(let i=0;i<=div;i++){
-      const upos = -s/2 + i*step;
-      const A = origin.clone().addScaledVector(u, upos).addScaledVector(v, -s/2);
-      const B = origin.clone().addScaledVector(u, upos).addScaledVector(v,  s/2);
-      verts.push(A.x,A.y,A.z, B.x,B.y,B.z);
-      lineRegistry.push([A.clone(), B.clone()]);
+  composer.addPass(
+    new SMAAPass(
+      window.innerWidth * renderer.getPixelRatio(),
+      window.innerHeight * renderer.getPixelRatio()
+    )
+  );
+
+  /* =========================================================
+     GRID CUBE (ROOM)
+  ========================================================= */
+  const roomGroup = new THREE.Group();
+  scene.add(roomGroup);
+
+  const lineRegistry = []; // array de [Vector3, Vector3]
+
+  function buildRoom() {
+    while (roomGroup.children.length)
+      roomGroup.remove(roomGroup.children[0]);
+    lineRegistry.length = 0;
+
+    const minSide = Math.min(window.innerWidth, window.innerHeight);
+    const s = minSide * CONFIG.roomSizeFactor;
+    const div = CONFIG.gridDivisions;
+    const step = s / div;
+
+    function addGridPlane(origin, u, v, color) {
+      const verts = [];
+
+      // Líneas paralelas 1
+      for (let i = 0; i <= div; i++) {
+        const posU = -s / 2 + i * step;
+        const a = origin.clone().addScaledVector(u, posU).addScaledVector(v, -s / 2);
+        const b = origin.clone().addScaledVector(u, posU).addScaledVector(v,  s / 2);
+        verts.push(a.x,a.y,a.z, b.x,b.y,b.z);
+        lineRegistry.push([a.clone(), b.clone()]);
+      }
+
+      // Líneas paralelas 2
+      for (let j = 0; j <= div; j++) {
+        const posV = -s / 2 + j * step;
+        const a = origin.clone().addScaledVector(u, -s/2).addScaledVector(v, posV);
+        const b = origin.clone().addScaledVector(u,  s/2).addScaledVector(v, posV);
+        verts.push(a.x,a.y,a.z, b.x,b.y,b.z);
+        lineRegistry.push([a.clone(), b.clone()]);
+      }
+
+      const geom = new THREE.BufferGeometry();
+      geom.setAttribute("position", new THREE.Float32BufferAttribute(verts, 3));
+
+      const mat = new THREE.LineBasicMaterial({
+        color,
+        transparent: true,
+        opacity: 0.35,
+        toneMapped: false
+      });
+
+      roomGroup.add(new THREE.LineSegments(geom, mat));
     }
-    for(let j=0;j<=div;j++){
-      const vpos = -s/2 + j*step;
-      const A = origin.clone().addScaledVector(u, -s/2).addScaledVector(v, vpos);
-      const B = origin.clone().addScaledVector(u,  s/2).addScaledVector(v, vpos);
-      verts.push(A.x,A.y,A.z, B.x,B.y,B.z);
-      lineRegistry.push([A.clone(), B.clone()]);
+
+    addGridPlane(new THREE.Vector3(0,0, s/2),  new THREE.Vector3(1,0,0), new THREE.Vector3(0,-1,0), CONFIG.colorFront);
+    addGridPlane(new THREE.Vector3(0,0,-s/2),  new THREE.Vector3(-1,0,0),new THREE.Vector3(0,-1,0), CONFIG.colorBack);
+    addGridPlane(new THREE.Vector3(-s/2,0,0),  new THREE.Vector3(0,0,1), new THREE.Vector3(0,-1,0), CONFIG.colorMid);
+    addGridPlane(new THREE.Vector3( s/2,0,0),  new THREE.Vector3(0,0,-1),new THREE.Vector3(0,-1,0), CONFIG.colorMid);
+    addGridPlane(new THREE.Vector3(0,-s/2,0),  new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,1), CONFIG.colorMid);
+    addGridPlane(new THREE.Vector3(0, s/2,0),  new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,-1), CONFIG.colorBack);
+  }
+
+  buildRoom();
+
+  /* =========================================================
+     TRON RUNNER (ESFERA + TRAIL)
+  ========================================================= */
+
+  // esfera más grande (neón)
+  const runnerMaterial = new THREE.MeshBasicMaterial({
+    color: 0x7CFF5A,
+    transparent: true,
+    opacity: 1,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    toneMapped: false
+  });
+
+  const runnerGeom = new THREE.SphereGeometry(10, 28, 28);
+  const runner = new THREE.Mesh(runnerGeom, runnerMaterial);
+  runner.visible = false;
+  scene.add(runner);
+
+  // TRAIL
+  const TRAIL_POINTS = 60;
+  const trailGeom = new THREE.BufferGeometry();
+  trailGeom.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(new Float32Array(TRAIL_POINTS * 3), 3)
+  );
+
+  const trailMaterial = new THREE.LineBasicMaterial({
+    color: 0x7CFF5A,
+    transparent: true,
+    opacity: 0.9,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    toneMapped: false
+  });
+
+  const trail = new THREE.Line(trailGeom, trailMaterial);
+  trail.visible = false;
+  scene.add(trail);
+
+  // estado
+  let runnerActive = false;
+  let runnerStart = null;
+  let runnerEnd = null;
+  let runnerT = 0;
+
+  function pickLine() {
+    return lineRegistry[Math.floor(Math.random() * lineRegistry.length)];
+  }
+
+  function updateTrail() {
+    const arr = trailGeom.attributes.position.array;
+
+    for (let i = (TRAIL_POINTS - 1) * 3; i >= 3; i--) {
+      arr[i] = arr[i - 3];
+      arr[i + 1] = arr[i - 2];
+      arr[i + 2] = arr[i - 1];
     }
 
-    const geom = new THREE.BufferGeometry();
-    geom.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
-    const mat = new THREE.LineBasicMaterial({ color, transparent:true, opacity:0.35, toneMapped:false });
-    roomGroup.add(new THREE.LineSegments(geom, mat));
+    arr[0] = runner.position.x;
+    arr[1] = runner.position.y;
+    arr[2] = runner.position.z;
+
+    trailGeom.attributes.position.needsUpdate = true;
   }
 
-  addGridPlane(new THREE.Vector3(0,0,s/2), new THREE.Vector3(1,0,0), new THREE.Vector3(0,-1,0), CONFIG.colorFront);
-  addGridPlane(new THREE.Vector3(0,0,-s/2), new THREE.Vector3(-1,0,0), new THREE.Vector3(0,-1,0), CONFIG.colorBack);
-  addGridPlane(new THREE.Vector3(-s/2,0,0), new THREE.Vector3(0,0,1), new THREE.Vector3(0,-1,0), CONFIG.colorMid);
-  addGridPlane(new THREE.Vector3(s/2,0,0), new THREE.Vector3(0,0,-1), new THREE.Vector3(0,-1,0), CONFIG.colorMid);
-  addGridPlane(new THREE.Vector3(0,-s/2,0), new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,1), CONFIG.colorMid);
-  addGridPlane(new THREE.Vector3(0,s/2,0), new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,-1), CONFIG.colorBack);
+  function updateRunner(dt) {
+    if (!runnerActive) return;
 
-  roomGroup.rotation.set(0,0.045,0);
-}
+    runnerT += dt * 0.9;
 
-/* -----------------------------------------------------
-  TRON RUNNER + TRAIL (ESFERA + LINE)
------------------------------------------------------ */
-const runnerMat = new THREE.MeshBasicMaterial({ color:0x7CFF5A, transparent:true, opacity:1.0, blending:THREE.AdditiveBlending, depthWrite:false, toneMapped:false });
-const runnerGeom = new THREE.SphereGeometry(8,24,24);
-const runner = new THREE.Mesh(runnerGeom, runnerMat);
-runner.visible = false;
-scene.add(runner);
+    if (runnerT >= 1) {
+      runnerActive = false;
+      runner.visible = false;
+      trail.visible = false;
+      return;
+    }
 
-const TRAIL_POINTS = 60;
-const trailGeom = new THREE.BufferGeometry();
-trailGeom.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(TRAIL_POINTS*3), 3));
-const trailMat = new THREE.LineBasicMaterial({ color:0x7CFF5A, transparent:true, opacity:0.9, blending:THREE.AdditiveBlending, depthWrite:false, toneMapped:false });
-const trail = new THREE.Line(trailGeom, trailMat);
-trail.visible = false;
-scene.add(trail);
-
-let runnerActive=false, runnerStart=null, runnerEnd=null, runnerT=0;
-
-function pickLine(){ return lineRegistry[Math.floor(Math.random()*lineRegistry.length)]; }
-
-function updateTrail(){
-  const arr = trailGeom.attributes.position.array;
-  for(let i=(TRAIL_POINTS-1)*3;i>=3;i--){
-    arr[i] = arr[i-3];
-    arr[i+1] = arr[i-2];
-    arr[i+2] = arr[i-1];
+    const pos = new THREE.Vector3().lerpVectors(runnerStart, runnerEnd, runnerT);
+    runner.position.copy(pos);
+    updateTrail();
   }
-  arr[0] = runner.position.x; arr[1] = runner.position.y; arr[2] = runner.position.z;
-  trailGeom.attributes.position.needsUpdate = true;
-}
 
-function updateRunner(dt){
-  if(!runnerActive) return;
-  runnerT += dt * 0.9;
-  if(runnerT >= 1){
-    runnerActive = false;
-    runner.visible = false;
-    trail.visible = false;
-    return;
+  function launchRunner() {
+    if (runnerActive) return;
+
+    const seg = pickLine();
+    if (!seg) return;
+
+    runnerStart = seg[0].clone();
+    runnerEnd = seg[1].clone();
+    runnerT = 0;
+
+    runner.visible = true;
+    trail.visible = true;
+
+    const arr = trailGeom.attributes.position.array;
+    for (let i = 0; i < TRAIL_POINTS; i++) {
+      arr[i * 3] = runnerStart.x;
+      arr[i * 3 + 1] = runnerStart.y;
+      arr[i * 3 + 2] = runnerStart.z;
+    }
+
+    trailGeom.attributes.position.needsUpdate = true;
+
+    runnerActive = true;
+
+    // frecuencia alta
+    setTimeout(launchRunner, 900 + Math.random() * 800);
   }
-  const pos = new THREE.Vector3().lerpVectors(runnerStart, runnerEnd, runnerT);
-  runner.position.copy(pos);
-  updateTrail();
-}
 
-function launchRunner(){
-  if(runnerActive) return;
-  const seg = pickLine();
-  if(!seg) return;
-  runnerStart = seg[0].clone(); runnerEnd = seg[1].clone(); runnerT = 0;
-  runner.visible = true; trail.visible = true;
-  const arr = trailGeom.attributes.position.array;
-  for(let i=0;i<TRAIL_POINTS;i++){
-    arr[i*3+0] = runnerStart.x; arr[i*3+1] = runnerStart.y; arr[i*3+2] = runnerStart.z;
+  setTimeout(launchRunner, 1500);
+
+  /* =========================================================
+     ANIMATE
+  ========================================================= */
+
+  let last = performance.now();
+
+  function animate(now) {
+    const dt = (now - last) / 1000;
+    last = now;
+
+    updateRunner(dt);
+    composer.render();
+
+    requestAnimationFrame(animate);
   }
-  trailGeom.attributes.position.needsUpdate = true;
-  runnerActive = true;
-  // más frecuente:
-  setTimeout(launchRunner, 1200 + Math.random()*900);
-}
 
-/* -----------------------------------------------------
-  CAMERA TRACK + ANIMATE
------------------------------------------------------ */
-buildRoom();
-setTimeout(launchRunner, 1200);
-
-let last = performance.now();
-function animate(now){
-  const dt = (now-last)/1000; last = now;
-  updateRunner(dt);
-  composer.render();
   requestAnimationFrame(animate);
-}
-requestAnimationFrame(animate);
 
-/* resize */
-window.addEventListener('resize', ()=>{ camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); composer.setSize(window.innerWidth, window.innerHeight); buildRoom(); });
+  /* =========================================================
+     RESIZE
+  ========================================================= */
+  window.addEventListener("resize", () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    composer.setSize(window.innerWidth, window.innerHeight);
+
+    buildRoom();
+  });
+
   </script>
 </body>
 </html>
